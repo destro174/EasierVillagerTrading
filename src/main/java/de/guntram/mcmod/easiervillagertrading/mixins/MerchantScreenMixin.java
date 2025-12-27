@@ -30,9 +30,9 @@ public abstract class MerchantScreenMixin extends HandledScreen<MerchantScreenHa
     
     @Inject(method="syncRecipeIndex", at=@At("RETURN"))
     public void tradeOnSetRecipeIndex(CallbackInfo ci) {
-        if (Screen.hasControlDown()) {
-            return;
-        }
+//        if (Screen.hasControlDown()) {
+//            return;
+//        }
         this.onMouseClick(null, 0, 0, SlotActionType.QUICK_MOVE);
         this.onMouseClick(null, 1, 0, SlotActionType.QUICK_MOVE);
 
