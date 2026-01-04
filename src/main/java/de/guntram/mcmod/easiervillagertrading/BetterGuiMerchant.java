@@ -5,14 +5,15 @@
  */
 package de.guntram.mcmod.easiervillagertrading;
 
-import net.minecraft.client.gui.screen.ingame.MerchantScreen;
-import net.minecraft.entity.player.PlayerInventory;
-import net.minecraft.item.ItemStack;
-import net.minecraft.screen.MerchantScreenHandler;
-import net.minecraft.screen.slot.SlotActionType;
-import net.minecraft.text.Text;
-import net.minecraft.village.TradeOffer;
-import net.minecraft.village.TradeOfferList;
+import net.minecraft.client.gui.screens.inventory.MerchantScreen;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.inventory.ClickType;
+import net.minecraft.world.inventory.MerchantContainer;
+import net.minecraft.world.inventory.MerchantMenu;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.trading.MerchantOffer;
+import net.minecraft.world.item.trading.MerchantOffers;
 
 /**
  *
@@ -22,8 +23,8 @@ public class BetterGuiMerchant extends MerchantScreen implements AutoTrade {
     
     private int frames;     //DEBUG
     
-    public BetterGuiMerchant (MerchantScreenHandler handler, PlayerInventory inv, Text title) {
-        super(handler, inv, title);
+    public BetterGuiMerchant(MerchantMenu merchantMenu, Inventory inventory, Component component) {
+        super(merchantMenu, inventory, component);
         frames=0; //DEBUG
     }
     
@@ -31,15 +32,15 @@ public class BetterGuiMerchant extends MerchantScreen implements AutoTrade {
     public void trade(int tradeIndex) {
         
         boolean shiftSwapped = ConfigurationHandler.isShiftSwapped();
-        
-        TradeOfferList trades=handler.getRecipes();
-        TradeOffer recipe = trades.get(tradeIndex);
+
+        MerchantOffers merchantOffers = menu.getOffers();
+        MerchantOffer recipe = merchantOffers.get(tradeIndex);
         int safeguard = 0;
-        while (!recipe.isDisabled()
+        while (!recipe.isOutOfStock()
         // TODO how do we check this now? &&  client.player.getInventory().getCursorStack().isEmpty()
         &&  inputSlotsAreEmpty()
         &&  hasEnoughItemsInInventory(recipe)
-        &&  canReceiveOutput(recipe.getSellItem())) {
+        &&  canReceiveOutput(recipe.getResult())) {
             transact(recipe);
 //            if (hasShiftDown() == shiftSwapped || ++safeguard > 50) {
 //                break;
@@ -49,9 +50,9 @@ public class BetterGuiMerchant extends MerchantScreen implements AutoTrade {
     
     private boolean inputSlotsAreEmpty() {
         boolean result =
-            handler.getSlot(0).getStack().isEmpty()
-        &&  handler.getSlot(1).getStack().isEmpty()
-        &&  handler.getSlot(2).getStack().isEmpty();
+            menu.getSlot(0).getItem().isEmpty()
+        &&  menu.getSlot(1).getItem().isEmpty()
+        &&  menu.getSlot(2).getItem().isEmpty();
         if (frames % 300 == 0) { /*
             System.out.println("stack 0: "+handler.getSlot(0).getStack().getTranslationKey()+"/"+handler.getSlot(0).getStack().getCount());
             System.out.println("stack 1: "+handler.getSlot(1).getStack().getTranslationKey()+"/"+handler.getSlot(0).getStack().getCount());
@@ -62,19 +63,19 @@ public class BetterGuiMerchant extends MerchantScreen implements AutoTrade {
                
     }
 
-    private boolean hasEnoughItemsInInventory(TradeOffer recipe) {
-        if (!hasEnoughItemsInInventory(recipe.getDisplayedFirstBuyItem()))
+    private boolean hasEnoughItemsInInventory(MerchantOffer recipe) {
+        if (!hasEnoughItemsInInventory(recipe.getCostA()))
             return false;
-        if (!hasEnoughItemsInInventory(recipe.getDisplayedSecondBuyItem()))
+        if (!hasEnoughItemsInInventory(recipe.getCostB()))
             return false;
         return true;
     }
     
     private boolean hasEnoughItemsInInventory(ItemStack stack) {
         int remaining=stack.getCount();
-        for (int i=handler.slots.size()-36; i<handler.slots.size(); i++) {
-            ItemStack invstack=handler.getSlot(i).getStack();
-            if (invstack==null)
+        for (int i=menu.slots.size()-36; i<menu.slots.size(); i++) {
+            ItemStack invstack=menu.getSlot(i).getItem();
+            if (invstack.isEmpty())
                 continue;
             if (areItemStacksMergable(stack, invstack)) {
                 //System.out.println("taking "+invstack.getCount()+" items from slot # "+i);
@@ -88,16 +89,16 @@ public class BetterGuiMerchant extends MerchantScreen implements AutoTrade {
 
     private boolean canReceiveOutput(ItemStack stack) {
         int remaining=stack.getCount();
-        for (int i=handler.slots.size()-36; i<handler.slots.size(); i++) {
-            ItemStack invstack=handler.getSlot(i).getStack();
-            if (invstack==null || invstack.isEmpty()) {
+        for (int i=menu.slots.size()-36; i<menu.slots.size(); i++) {
+            ItemStack invstack=menu.getSlot(i).getItem();
+            if (invstack.isEmpty()) {
                 //System.out.println("can put result into empty slot "+i);
                 return true;
             }
             if (areItemStacksMergable(stack, invstack)
-            &&  stack.getMaxCount() >= stack.getCount() + invstack.getCount()) {
+            &&  stack.getMaxStackSize() >= stack.getCount() + invstack.getCount()) {
                 //System.out.println("Can merge "+(invstack.getMaxStackSize()-invstack.getCount())+" items with slot "+i);
-                remaining-=(invstack.getMaxCount()-invstack.getCount());
+                remaining-=(invstack.getMaxStackSize()-invstack.getCount());
             }
             if (remaining<=0)
                 return true;
@@ -105,13 +106,13 @@ public class BetterGuiMerchant extends MerchantScreen implements AutoTrade {
         return false;
     }
     
-    private void transact(TradeOffer recipe) {
+    private void transact(MerchantOffer recipe) {
         //System.out.println("fill input slots called");
         int putback0, putback1=-1;
-        putback0=fillSlot(0, recipe.getDisplayedFirstBuyItem());
-        putback1=fillSlot(1, recipe.getDisplayedSecondBuyItem());
+        putback0=fillSlot(0, recipe.getCostA());
+        putback1=fillSlot(1, recipe.getCostB());
 
-        getslot(2, recipe.getSellItem(), putback0, putback1);
+        getslot(2, recipe.getResult(), putback0, putback1);
         //System.out.println("putting back to slot "+putback0+" from 0, and to "+putback1+"from 1");
         if (putback0!=-1) {
             slotClick(0);
@@ -123,9 +124,9 @@ public class BetterGuiMerchant extends MerchantScreen implements AutoTrade {
         }
         // This is a serious hack. 
         // ScreenHandler checks:
-        //    if (actionType == SlotActionType.SWAP && clickData >= 0 && clickData < 9) 
+        //    if (actionType == ClickType.SWAP && clickData >= 0 && clickData < 9) 
         // so this is a NOP on (a normal) server, but our mixin can watch for it and force an inventory resend.
-        this.onMouseClick(null, /* slot*/ 0, /* clickData*/ 99, SlotActionType.SWAP);
+        this.slotClicked(null, /* slot*/ 0, /* clickData*/ 99, ClickType.SWAP);
     }
 
     /**
@@ -137,13 +138,13 @@ public class BetterGuiMerchant extends MerchantScreen implements AutoTrade {
      */
     private int fillSlot(int slot, ItemStack stack) {
         int remaining=stack.getCount();
-        for (int i=handler.slots.size()-36; i<handler.slots.size(); i++) {
-            ItemStack invstack=handler.getSlot(i).getStack();
-            if (invstack==null)
+        for (int i=menu.slots.size()-36; i<menu.slots.size(); i++) {
+            ItemStack invstack=menu.getSlot(i).getItem();
+            if (invstack.isEmpty())
                 continue;
             boolean needPutBack=false;
             if (areItemStacksMergable(stack, invstack)) {
-                if (stack.getCount()+invstack.getCount() > stack.getMaxCount())
+                if (stack.getCount()+invstack.getCount() > stack.getMaxStackSize())
                     needPutBack=true;
                 remaining-=invstack.getCount();
                 // System.out.println("taking "+invstack.getCount()+" items from slot # "+i+", remaining is now "+remaining);
@@ -165,8 +166,8 @@ public class BetterGuiMerchant extends MerchantScreen implements AutoTrade {
         if (a==null || b==null)
             return false;
         if (a.getItem() == b.getItem()
-        &&  (!a.isDamageable() || a.getDamage()==b.getDamage())
-        &&   ItemStack.areItemsAndComponentsEqual(a, b))
+        &&  (!a.isDamageableItem() || a.getDamageValue()==b.getDamageValue())
+        &&   ItemStack.isSameItemSameComponents(a, b))
             return true;
         return false;
     }
@@ -174,16 +175,16 @@ public class BetterGuiMerchant extends MerchantScreen implements AutoTrade {
     private void getslot(int slot, ItemStack stack, int... forbidden) {
         int remaining=stack.getCount();
         slotClick(slot);
-        for (int i=handler.slots.size()-36; i<handler.slots.size(); i++) {
-            ItemStack invstack=handler.getSlot(i).getStack();
-            if (invstack==null || invstack.isEmpty()) {
+        for (int i=menu.slots.size()-36; i<menu.slots.size(); i++) {
+            ItemStack invstack=menu.getSlot(i).getItem();
+            if (invstack.isEmpty()) {
                 continue;
             }
             if (areItemStacksMergable(stack, invstack)
-                && invstack.getCount() < invstack.getMaxCount()
+                && invstack.getCount() < invstack.getMaxStackSize()
             ) {
                 // System.out.println("Can merge "+(invstack.getMaxStackSize()-invstack.getCount())+" items with slot "+i);
-                remaining-=(invstack.getMaxCount()-invstack.getCount());
+                remaining-=(invstack.getMaxStackSize()-invstack.getCount());
                 slotClick(i);
             }
             if (remaining<=0)
@@ -191,7 +192,7 @@ public class BetterGuiMerchant extends MerchantScreen implements AutoTrade {
         }
         
         // When looking for an empty slot, don't take one that we want to put some input back to.
-        for (int i=handler.slots.size()-36; i<handler.slots.size(); i++) {
+        for (int i=menu.slots.size()-36; i<menu.slots.size(); i++) {
             boolean isForbidden=false;
             for (int f:forbidden) {
                 if (i==f)
@@ -199,8 +200,8 @@ public class BetterGuiMerchant extends MerchantScreen implements AutoTrade {
             }
             if (isForbidden)
                 continue;
-            ItemStack invstack=handler.getSlot(i).getStack();
-            if (invstack==null || invstack.isEmpty()) {
+            ItemStack invstack=menu.getSlot(i).getItem();
+            if (invstack.isEmpty()) {
                 slotClick(i);
                 // System.out.println("putting result into empty slot "+i);
                 return;
@@ -210,6 +211,6 @@ public class BetterGuiMerchant extends MerchantScreen implements AutoTrade {
     
     private void slotClick(int slot) {
         // System.out.println("Clicking slot "+slot);
-        this.onMouseClick(null, slot, 0, SlotActionType.PICKUP);
+        this.slotClicked(null, slot, 0, ClickType.PICKUP);
     }
 }

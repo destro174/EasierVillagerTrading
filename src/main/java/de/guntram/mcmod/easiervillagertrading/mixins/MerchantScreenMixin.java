@@ -6,13 +6,12 @@
 package de.guntram.mcmod.easiervillagertrading.mixins;
 
 import de.guntram.mcmod.easiervillagertrading.AutoTrade;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.screen.ingame.HandledScreen;
-import net.minecraft.client.gui.screen.ingame.MerchantScreen;
-import net.minecraft.entity.player.PlayerInventory;
-import net.minecraft.screen.MerchantScreenHandler;
-import net.minecraft.screen.slot.SlotActionType;
-import net.minecraft.text.Text;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.gui.screens.inventory.MerchantScreen;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.inventory.ClickType;
+import net.minecraft.world.inventory.MerchantMenu;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -20,22 +19,22 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(MerchantScreen.class)
-public abstract class MerchantScreenMixin extends HandledScreen<MerchantScreenHandler> {
+public abstract class MerchantScreenMixin extends AbstractContainerScreen<MerchantMenu> {
     
-    @Shadow private int selectedIndex;
+    @Shadow private int shopItem;
 
-    public MerchantScreenMixin(MerchantScreenHandler merchantContainer_1, PlayerInventory playerInventory_1, Text text_1) {
-        super(merchantContainer_1, playerInventory_1, text_1);
+    public MerchantScreenMixin(MerchantMenu merchantMenu, Inventory inventory, Component component) {
+        super(merchantMenu, inventory, component);
     }
     
-    @Inject(method="syncRecipeIndex", at=@At("RETURN"))
+    @Inject(method="postButtonClick", at=@At("RETURN"))
     public void tradeOnSetRecipeIndex(CallbackInfo ci) {
 //        if (Screen.hasControlDown()) {
 //            return;
 //        }
-        this.onMouseClick(null, 0, 0, SlotActionType.QUICK_MOVE);
-        this.onMouseClick(null, 1, 0, SlotActionType.QUICK_MOVE);
+        this.slotClicked(null, 0, 0, ClickType.QUICK_MOVE);
+        this.slotClicked(null, 1, 0, ClickType.QUICK_MOVE);
 
-        ((AutoTrade)this).trade(selectedIndex);
+        ((AutoTrade)this).trade(shopItem);
     }
 }

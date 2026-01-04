@@ -4,8 +4,7 @@
     "refmap": "EasierVillagerTrading-refmap.json",
     "minVersion": "0.6",
     "client": [
-        "GuiMerchantMixin", "MerchantScreenMixin",
-        "ServerPlayNetworkHandlerMixin"],
+        "GuiMerchantMixin", "MerchantScreenMixin"],
     "notused": [
         "GuiActionConfirmDebug", 
         "ClickWindowC2SPacketDebugMixin"        
