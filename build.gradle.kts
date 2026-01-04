@@ -1,6 +1,6 @@
 plugins {
     id("java")
-    id("fabric-loom") version "1.11-SNAPSHOT"
+    id("fabric-loom") version "1.13-SNAPSHOT"
 }
 
 val mcVersion = rootProject.providers.gradleProperty("minecraft_version").get()
@@ -16,13 +16,13 @@ java {
 }
 
 dependencies {
-    minecraft("com.mojang:minecraft:1.21.10")
+    minecraft("com.mojang:minecraft:1.21.11")
     mappings(loom.officialMojangMappings())
-    modImplementation("net.fabricmc:fabric-loader:0.18.1")
-    modImplementation("net.fabricmc.fabric-api:fabric-api:0.138.3+1.21.10")
-    modImplementation("com.terraformersmc:modmenu:16.0.0-rc.1")
-    modImplementation("de.guntram.mcmod:GBfabrictools:1.4+1.20")
-    include("de.guntram.mcmod:GBfabrictools:1.4+1.20")
+    modImplementation("net.fabricmc:fabric-loader:0.18.4")
+    modImplementation("net.fabricmc.fabric-api:fabric-api:0.140.2+1.21.11")
+    modImplementation("com.terraformersmc:modmenu:17.0.0-beta.1")
+//    modImplementation("de.guntram.mcmod:GBfabrictools:1.4+1.20")
+//    include("de.guntram.mcmod:GBfabrictools:1.4+1.20")
 }
 
 fun gitCommit(): String {

@@ -31,7 +31,7 @@ public class BetterGuiMerchant extends MerchantScreen implements AutoTrade {
     @Override
     public void trade(int tradeIndex) {
         
-        boolean shiftSwapped = ConfigurationHandler.isShiftSwapped();
+//        boolean shiftSwapped = ConfigurationHandler.isShiftSwapped();
 
         MerchantOffers merchantOffers = menu.getOffers();
         MerchantOffer recipe = merchantOffers.get(tradeIndex);
