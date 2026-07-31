@@ -10,7 +10,7 @@ import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.gui.screens.inventory.MerchantScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
-import net.minecraft.world.inventory.ClickType;
+import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.inventory.MerchantMenu;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -32,8 +32,8 @@ public abstract class MerchantScreenMixin extends AbstractContainerScreen<Mercha
 //        if (Screen.hasControlDown()) {
 //            return;
 //        }
-        this.slotClicked(null, 0, 0, ClickType.QUICK_MOVE);
-        this.slotClicked(null, 1, 0, ClickType.QUICK_MOVE);
+        this.slotClicked(null, 0, 0, ContainerInput.QUICK_MOVE);
+        this.slotClicked(null, 1, 0, ContainerInput.QUICK_MOVE);
 
         ((AutoTrade)this).trade(shopItem);
     }
